@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Map Trial</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="shortcut icon" href="Map.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body.dark {
+      background-color: #121212;
+      color: #fff;
+    }
+    nav a {
+      margin-right: 15px;
+    }
+    #mapa {
+      height: 500px;
+      margin-top: 20px;
+    }
+    .dark #mapa {
+      filter: brightness(0.8);
+    }
+    .filtro-group label {
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    #btnLocalizacao {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Mapa</a>
+    <a href="cadastrar.html">Cadastrar</a>
+    <a href="teste.php">Testar conexão</a>
+    <button onclick="toggleDarkMode()">Dark Mode</button>
+  </nav>
+
+  <main>
+    <h1>Mapa de Pontos de Doação</h1>
+    <div class="filtro-group" id="filtro">
+      <label><input type="checkbox" name="tipo_filtro" value="alimento"> Alimento</label>
+      <label><input type="checkbox" name="tipo_filtro" value="roupa"> Roupa</label>
+      <label><input type="checkbox" name="tipo_filtro" value="livro"> Livro</label>
+      <label><input type="checkbox" name="tipo_filtro" value="brinquedo"> Brinquedo</label>
+    </div>
+    <button id="btnLocalizacao" onclick="mostrarLocalizacao()">📍 Mostrar minha localização</button>
+    <div id="mapa"></div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('mapa').setView([-15.77972, -47.92972], 4);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const iconeVermelho = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      shadowSize: [41, 41]
+    });
+
+    const iconeAzul = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      shadowSize: [41, 41]
+    });
+
+    let markers = [];
+    let marcadorUsuario = null;
+
+    function carregarPontos() {
+      const checkedBoxes = document.querySelectorAll('input[name="tipo_filtro"]:checked');
+      const tipos = Array.from(checkedBoxes).map(cb => cb.value);
+      const tiposParam = tipos.length > 0 ? tipos.join(',') : '';
+
+      fetch(`get_pontos.php?tipos=${encodeURIComponent(tiposParam)}`)
+        .then(res => res.json())
+        .then(pontos => {
+          markers.forEach(marker => map.removeLayer(marker));
+          markers = [];
+
+          pontos.forEach(ponto => {
+            const marker = L.marker([ponto.latitude, ponto.longitude], { icon: iconeVermelho })
+              .bindPopup(`<b>${ponto.nome}</b><br>${ponto.tipo_doacao}<br>${ponto.endereco}`)
+              .on('click', () => {
+                map.setView([ponto.latitude, ponto.longitude], 17);
+              });
+
+            marker.addTo(map);
+            markers.push(marker);
+          });
+        });
+    }
+
+function mostrarLocalizacao() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      if (marcadorUsuario) {
+        map.removeLayer(marcadorUsuario);
+      }
+
+      marcadorUsuario = L.marker([lat, lng], {
+        icon: iconeAzul,
+        title: "Você está aqui"
+      }).addTo(map)
+        .bindPopup(`📍 Você está aqui<br>Latitude: ${lat.toFixed(5)}<br>Longitude: ${lng.toFixed(5)}`)
+        .openPopup();
+
+      map.setView([lat, lng], 17);
+    }, () => {
+      alert("Erro ao obter sua localização.");
+    }, {
+      enableHighAccuracy: true, // <-- ATIVA ALTA PRECISÃO
+      timeout: 10000,           // espera no máximo 10 segundos
+      maximumAge: 0             // não usa cache, sempre tenta pegar a posição mais atual
+    });
+  } else {
+    alert("Geolocalização não é suportada nesse navegador.");
+  }
+}
+
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark");
+    }
+
+    document.querySelectorAll('input[name="tipo_filtro"]').forEach(checkbox => {
+      checkbox.addEventListener('change', carregarPontos);
+    });
+
+    carregarPontos();
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Map Trial</title>
+  <link rel="shortcut icon" href="Map.ico" type="image/x-icon">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <a href="index.html">Mapa</a>
+    <a href="cadastrar.html">Cadastrar</a>
+    <a href="teste.php">Testar conexão</a>
+  </nav>
+
+  <main>
+    <h1>Cadastro de Ponto de Doação</h1>
+    <form action="salvar.php" method="POST">
+      <input type="text" name="nome" placeholder="Nome do Local" required>
+      <input type="text" name="cep" placeholder="CEP (somente números)" required>
+
+      <fieldset>
+        <legend>Tipos de Doação</legend>
+        <label><input type="checkbox" name="tipo_doacao[]" value="alimento"> Alimento</label><br>
+        <label><input type="checkbox" name="tipo_doacao[]" value="roupa"> Roupa</label><br>
+        <label><input type="checkbox" name="tipo_doacao[]" value="livro"> Livro</label><br>
+        <label><input type="checkbox" name="tipo_doacao[]" value="brinquedo"> Brinquedo</label><br>
+      </fieldset>
+
+      <button type="submit">Cadastrar</button>
+    </form>
+  </main>
+</body>
+</html>
